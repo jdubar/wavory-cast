@@ -146,7 +146,8 @@ if (params.has('demo')) {
   options.skipPlayersLoad = true;
   options.statusText = 'Wavory';
   // This page draws its own controls, so a Nest Hub shows it instead of its own media screen.
-  options.touchScreenOptimizedApp = true;
+  options.uiConfig = new cast.framework.ui.UiConfig();
+  options.uiConfig.touchScreenOptimizedApp = true;
   options.customNamespaces = { [NAMESPACE]: cast.framework.system.MessageType.JSON };
   context.start(options);
 }
