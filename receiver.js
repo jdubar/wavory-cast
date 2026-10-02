@@ -5,24 +5,21 @@
  * album, cover and custom data { qid, key, station }, and keeps it topped up; this page plays them and shows what's
  * playing. The streams and covers come straight from the Plex server, usually over plain http on the home network.
  *
- * Thumbs and skip are the station's, so they go to the phone on NAMESPACE as { type: 'thumb', rating, qid } and
- * { type: 'skip' }; the phone sends back { type: 'rating', qid, rating } so the thumbs show the song's.
+ * On a touch display (Nest Hub) the Cast SDK draws its controls over this page when it's touched: thumbs down,
+ * play/pause, skip, thumbs up. Thumbs are the station's, so they go to the phone on NAMESPACE as
+ * { type: 'thumb', rating, qid }; the phone answers { type: 'rating', qid, rating }, which lights the thumb.
  */
 
 const context = cast.framework.CastReceiverContext.getInstance();
 const player = context.getPlayerManager();
 const { EventType } = cast.framework.events;
-const { Command, PlayerState } = cast.framework.messages;
+const { Command, MessageType, PlayerState, UserAction, UserActionState } = cast.framework.messages;
+const { Controls, ControlsButton, ControlsSlot } = cast.framework.ui;
 const $ = (id) => document.getElementById(id);
 const NAMESPACE = 'urn:x-cast:com.toethumb.wavory';
-const PAUSE_ICON = 'M6 19h4V5H6v14zm8-14v14h4V5h-4z';
-const PLAY_ICON = 'M8 5v14l11-7z';
 
 /** Thumbs by queue ID, as the phone last said. */
 const ratings = new Map();
-
-player.setMediaElement($('audio'));
-
 let shownCover;
 
 function fmt(sec) {
@@ -73,42 +70,26 @@ function tick() {
   $('fill').style.width = duration > 0 ? `${Math.min(100, (position / duration) * 100)}%` : '0';
   const state = player.getPlayerState();
   $('state').textContent = state === PlayerState.PAUSED ? 'Paused' : state === PlayerState.BUFFERING ? 'Loading' : '';
-  const paused = state === PlayerState.PAUSED || state === PlayerState.IDLE;
-  $('playIcon').setAttribute('d', paused ? PLAY_ICON : PAUSE_ICON);
-  $('playPause').setAttribute('aria-label', paused ? 'Play' : 'Pause');
-  const rating = ratings.get(qidOf(media));
-  $('thumbUp').classList.toggle('on', rating === 'up');
-  $('thumbDown').classList.toggle('on', rating === 'down');
-  $('thumbUp').setAttribute('aria-pressed', String(rating === 'up'));
-  $('thumbDown').setAttribute('aria-pressed', String(rating === 'down'));
-  document.body.classList.toggle('no-phone', context.getSenders().length === 0);
 }
 
 function qidOf(media) {
   return media && media.customData ? media.customData.qid : undefined;
 }
 
-function toPhone(message) {
-  context.sendCustomMessage(NAMESPACE, undefined, message);
-}
-
-function thumb(rating) {
-  const qid = qidOf(player.getMediaInformation());
+/** Lights the touch controls' thumb for the playing song. */
+function showRating() {
+  const media = player.getMediaInformation();
+  const qid = qidOf(media);
   if (!qid) return;
-  // Shown straight away; the phone's answer settles it (a second press takes the thumb off).
-  ratings.set(qid, ratings.get(qid) === rating ? null : rating);
-  toPhone({ type: 'thumb', rating, qid });
-  tick();
+  const rating = ratings.get(qid);
+  const action = rating === 'up' ? UserAction.LIKE : rating === 'down' ? UserAction.DISLIKE : null;
+  media.userActionStates = action ? [new UserActionState(action)] : [];
+  try {
+    player.setMediaInformation(media, true);
+  } catch (e) {
+    // Between songs: the next one's rating comes with it.
+  }
 }
-
-$('thumbUp').addEventListener('click', () => thumb('up'));
-$('thumbDown').addEventListener('click', () => thumb('down'));
-$('skip').addEventListener('click', () => toPhone({ type: 'skip' }));
-$('playPause').addEventListener('click', () => {
-  const state = player.getPlayerState();
-  if (state === PlayerState.PAUSED) player.play();
-  else if (state !== PlayerState.IDLE) player.pause();
-});
 
 const params = new URLSearchParams(location.search);
 if (params.has('demo')) {
@@ -126,26 +107,45 @@ if (params.has('demo')) {
   $('duration').textContent = '4:36';
   $('fill').style.width = '27%';
 } else {
-  player.addEventListener(EventType.PLAYER_LOAD_COMPLETE, tick);
+  player.setMediaElement($('audio'));
+  player.addEventListener(EventType.PLAYER_LOAD_COMPLETE, () => {
+    tick();
+    showRating();
+  });
   player.addEventListener(EventType.MEDIA_STATUS, tick);
   setInterval(tick, 500);
 
   if (params.has('debug')) context.setLoggerLevel(cast.framework.LoggerLevel.DEBUG);
 
+  // The touch controls' thumbs: the phone decides (a second press takes the thumb off) and answers with the result.
+  player.setMessageInterceptor(MessageType.USER_ACTION, (request) => {
+    const qid = qidOf(player.getMediaInformation());
+    const action = request.userAction;
+    const rating = action === UserAction.LIKE ? 'up' : action === UserAction.DISLIKE ? 'down' : null;
+    if (qid && rating) context.sendCustomMessage(NAMESPACE, undefined, { type: 'thumb', rating, qid });
+    return request;
+  });
+
   context.addCustomMessageListener(NAMESPACE, (event) => {
     const message = event.data || {};
     if (message.type === 'rating' && message.qid) {
       ratings.set(message.qid, message.rating || null);
-      tick();
+      if (message.qid === qidOf(player.getMediaInformation())) showRating();
     }
   });
 
+  const controls = Controls.getInstance();
+  controls.clearDefaultSlotAssignments();
+  controls.assignButton(ControlsSlot.SLOT_SECONDARY_1, ControlsButton.DISLIKE);
+  controls.assignButton(ControlsSlot.SLOT_PRIMARY_2, ControlsButton.QUEUE_NEXT);
+  controls.assignButton(ControlsSlot.SLOT_SECONDARY_2, ControlsButton.LIKE);
+
   const options = new cast.framework.CastReceiverOptions();
-  options.supportedCommands = Command.ALL_BASIC_MEDIA | Command.QUEUE_NEXT;
+  options.supportedCommands = Command.ALL_BASIC_MEDIA | Command.QUEUE_NEXT | Command.LIKE | Command.DISLIKE;
   // Plain audio files: no HLS, DASH or Smooth Streaming players to load.
   options.skipPlayersLoad = true;
   options.statusText = 'Wavory';
-  // This page draws its own controls, so a Nest Hub shows it instead of its own media screen.
+  // This page shows what's playing, so a Nest Hub draws its controls over it instead of its own media screen.
   options.uiConfig = new cast.framework.ui.UiConfig();
   options.uiConfig.touchScreenOptimizedApp = true;
   options.customNamespaces = { [NAMESPACE]: cast.framework.system.MessageType.JSON };

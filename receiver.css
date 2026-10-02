@@ -195,56 +195,6 @@ h1 {
   letter-spacing: 0.12em;
 }
 
-/* Big enough for a finger on a Nest Hub. */
-.controls {
-  display: flex;
-  align-items: center;
-  gap: 1.6rem;
-  margin-top: 3.5vh;
-}
-
-.btn {
-  display: grid;
-  place-items: center;
-  width: 3.6rem;
-  height: 3.6rem;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--text);
-  transition: background 0.15s, transform 0.1s;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.btn svg {
-  width: 55%;
-  height: 55%;
-  fill: currentColor;
-}
-
-.btn:active {
-  transform: scale(0.9);
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.btn.play {
-  width: 4.6rem;
-  height: 4.6rem;
-  background: var(--text);
-  color: var(--bg);
-}
-
-.btn.thumb.on {
-  background: var(--accent);
-  color: #fff;
-}
-
-/* Thumbs and skip need the phone; without it they'd do nothing. */
-body.no-phone .btn:not(.play) {
-  opacity: 0.35;
-  pointer-events: none;
-}
 
 /* Tall, narrow screens: stacked. */
 @media (max-aspect-ratio: 1/1) {
@@ -259,9 +209,5 @@ body.no-phone .btn:not(.play) {
 
   .info {
     width: 100%;
-  }
-
-  .controls {
-    justify-content: center;
   }
 }
