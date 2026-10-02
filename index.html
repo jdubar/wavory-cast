@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wavory</title>
+    <link rel="stylesheet" href="receiver.css" />
+    <script src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+  </head>
+  <body class="idle">
+    <div class="backdrop" id="backdrop" aria-hidden="true"></div>
+
+    <header class="top">
+      <img class="wordmark" src="wordmark.svg" alt="Wavory" />
+    </header>
+
+    <main class="stage">
+      <section class="ready">
+        <img class="ready-mark" src="mark.svg" alt="" />
+        <p>Pick a station in Wavory on your phone.</p>
+      </section>
+
+      <section class="playing">
+        <div class="cover">
+          <img id="cover" alt="" />
+          <img class="cover-fallback" src="mark.svg" alt="" />
+        </div>
+        <div class="info">
+          <p class="eyebrow" id="station"></p>
+          <h1 id="title"></h1>
+          <p class="artist" id="artist"></p>
+          <p class="album" id="album"></p>
+          <div class="progress">
+            <div class="track"><div class="fill" id="fill"></div></div>
+            <div class="times">
+              <span id="elapsed">0:00</span>
+              <span class="state" id="state"></span>
+              <span id="duration">0:00</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <audio id="audio"></audio>
+    <script src="receiver.js"></script>
+  </body>
+</html>
