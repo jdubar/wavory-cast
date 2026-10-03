@@ -1,4 +1,4 @@
-# wavory-cast
+<img src=".github/wordmark.svg" alt="wavory-cast" height="80">
 
 The Google Cast receiver for [Wavory](https://github.com/jdubar/wavory), personal radio on a Plex music library. When
 the Wavory Android app casts a station to a Google Home, Nest Hub or Chromecast, the device loads this page: it plays
