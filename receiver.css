@@ -196,6 +196,31 @@ h1 {
 }
 
 
+/*
+ * Touch displays (Nest Hub): the Cast SDK's controls cover the bottom ~40% with their own progress bar and buttons,
+ * so ours goes and everything sits above them.
+ */
+body.touch .stage {
+  align-items: flex-start;
+  padding: 3vh 6vw 0;
+  max-height: 58vh;
+}
+
+body.touch .cover {
+  width: 42vh;
+}
+
+body.touch .progress {
+  display: none;
+}
+
+body.touch h1 {
+  -webkit-line-clamp: 1;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  display: block;
+}
+
 /* Tall, narrow screens: stacked. */
 @media (max-aspect-ratio: 1/1) {
   body:not(.idle) .playing {

@@ -92,6 +92,22 @@ function showRating() {
 }
 
 const params = new URLSearchParams(location.search);
+
+/** Leaves room for the touch controls (receiver.css). ?touch shows the layout in a browser. */
+function markTouch() {
+  let touch = params.has('touch') || matchMedia('(pointer: coarse)').matches;
+  try {
+    const caps = context.getDeviceCapabilities();
+    if (caps && cast.framework.system.DeviceCapabilities.TOUCH_INPUT_SUPPORTED in caps) {
+      touch = !!caps[cast.framework.system.DeviceCapabilities.TOUCH_INPUT_SUPPORTED];
+    }
+  } catch (e) {
+    // not started yet
+  }
+  document.body.classList.toggle('touch', touch);
+}
+markTouch();
+
 if (params.has('demo')) {
   // For working on the design in a browser: ?demo, or ?demo=<cover URL>.
   show({
@@ -125,6 +141,8 @@ if (params.has('demo')) {
     if (qid && rating) context.sendCustomMessage(NAMESPACE, undefined, { type: 'thumb', rating, qid });
     return request;
   });
+
+  context.addEventListener(cast.framework.system.EventType.READY, markTouch);
 
   context.addCustomMessageListener(NAMESPACE, (event) => {
     const message = event.data || {};
