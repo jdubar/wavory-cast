@@ -1,0 +1,13 @@
+{
+  "name": "wavory-cast",
+  "private": true,
+  "description": "Cast receiver for Wavory",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^5.0.3",
+    "jsdom": "^30.1.1",
+    "vitest": "^5.0.3"
+  }
+}
