@@ -430,3 +430,7 @@ FodyWeavers.xsd
 
 # Vite cache from previewing locally
 .vite/
+
+# Test coverage
+coverage/
+test-report.junit.xml

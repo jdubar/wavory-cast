@@ -17,17 +17,11 @@ const { Command, MessageType, PlayerState, UserAction, UserActionState } = cast.
 const { Controls, ControlsButton, ControlsSlot } = cast.framework.ui;
 const $ = (id) => document.getElementById(id);
 const NAMESPACE = 'urn:x-cast:com.toethumb.wavory';
+const { fmt, progressWidth, stateLabel, stationLabel, ratingOf, actionOf } = WavoryLib;
 
 /** Thumbs by queue ID, as the phone last said. */
 const ratings = new Map();
 let shownCover;
-
-function fmt(sec) {
-  if (!Number.isFinite(sec) || sec < 0) return '0:00';
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${m}:${String(s).padStart(2, '0')}`;
-}
 
 function show(media) {
   document.body.classList.toggle('idle', !media);
@@ -36,8 +30,7 @@ function show(media) {
   $('title').textContent = meta.title || '';
   $('artist').textContent = meta.artist || '';
   $('album').textContent = meta.albumName || '';
-  const station = media.customData && media.customData.station;
-  $('station').textContent = station ? `Now playing on ${station}` : 'Now playing';
+  $('station').textContent = stationLabel(media.customData && media.customData.station);
   setCover(meta.images && meta.images[0] && meta.images[0].url);
 }
 
@@ -67,9 +60,8 @@ function tick() {
   const duration = player.getDurationSec() || (media.duration ?? 0);
   $('elapsed').textContent = fmt(position);
   $('duration').textContent = fmt(duration);
-  $('fill').style.width = duration > 0 ? `${Math.min(100, (position / duration) * 100)}%` : '0';
-  const state = player.getPlayerState();
-  $('state').textContent = state === PlayerState.PAUSED ? 'Paused' : state === PlayerState.BUFFERING ? 'Loading' : '';
+  $('fill').style.width = progressWidth(position, duration);
+  $('state').textContent = stateLabel(player.getPlayerState(), PlayerState);
 }
 
 function qidOf(media) {
@@ -81,8 +73,7 @@ function showRating() {
   const media = player.getMediaInformation();
   const qid = qidOf(media);
   if (!qid) return;
-  const rating = ratings.get(qid);
-  const action = rating === 'up' ? UserAction.LIKE : rating === 'down' ? UserAction.DISLIKE : null;
+  const action = actionOf(ratings.get(qid), UserAction);
   media.userActionStates = action ? [new UserActionState(action)] : [];
   try {
     player.setMediaInformation(media, true);
@@ -136,8 +127,7 @@ if (params.has('demo')) {
   // The touch controls' thumbs: the phone decides (a second press takes the thumb off) and answers with the result.
   player.setMessageInterceptor(MessageType.USER_ACTION, (request) => {
     const qid = qidOf(player.getMediaInformation());
-    const action = request.userAction;
-    const rating = action === UserAction.LIKE ? 'up' : action === UserAction.DISLIKE ? 'down' : null;
+    const rating = ratingOf(request.userAction, UserAction);
     if (qid && rating) context.sendCustomMessage(NAMESPACE, undefined, { type: 'thumb', rating, qid });
     return request;
   });
