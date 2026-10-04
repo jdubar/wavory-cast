@@ -1,5 +1,9 @@
 <img src=".github/wordmark.svg" alt="wavory-cast" height="80">
 
+[![CI](https://github.com/jdubar/wavory-cast/actions/workflows/codecov.yml/badge.svg)](https://github.com/jdubar/wavory-cast/actions/workflows/codecov.yml)
+[![codecov](https://codecov.io/gh/jdubar/wavory-cast/graph/badge.svg)](https://codecov.io/gh/jdubar/wavory-cast)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 The Google Cast receiver for [Wavory](https://github.com/jdubar/wavory), personal radio on a Plex music library. When
 the Wavory Android app casts a station to a Google Home, Nest Hub or Chromecast, the device loads this page: it plays
 the songs straight from the Plex server and shows the Wavory now-playing screen.
